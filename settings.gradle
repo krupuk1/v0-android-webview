@@ -1,0 +1,2 @@
+rootProject.name = "WebViewDownloader"
+include ':app'

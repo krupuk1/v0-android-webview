@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">WebView Downloader</string>
+    <string name="download_complete">Download Complete</string>
+    <string name="download_failed">Download Failed</string>
+    <string name="downloading">Downloading…</string>
+    <string name="storage_permission_denied">Storage permission is required to download files</string>
+    <string name="storage_permission_granted">Storage permission granted</string>
+    <string name="only_png_files">Only PNG files can be downloaded</string>
+    <string name="cancel">Cancel</string>
+    <string name="open">Open</string>
+</resources>
