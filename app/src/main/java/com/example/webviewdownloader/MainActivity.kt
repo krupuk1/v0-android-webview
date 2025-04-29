@@ -16,6 +16,7 @@ import android.webkit.CookieManager
 import android.webkit.URLUtil
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
@@ -55,7 +56,7 @@ class MainActivity : AppCompatActivity() {
         
         // Allow mixed content (if your site uses http)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            webView.settings.mixedContentMode = WebView.MIXED_CONTENT_ALWAYS_ALLOW
+            webView.settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         }
         
         // Set WebViewClient to handle page navigation
@@ -91,7 +92,7 @@ class MainActivity : AppCompatActivity() {
         }
         
         // Load the PHP webpage
-        webView.loadUrl("https://your-php-website.com")
+        webView.loadUrl("https://media.sekol.my.id/login.php")
     }
     
     private fun downloadFile(url: String, userAgent: String, contentDisposition: String, mimeType: String) {
