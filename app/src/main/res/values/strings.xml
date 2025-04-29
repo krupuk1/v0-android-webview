@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">WebView Downloader</string>
+    <string name="app_name">Tagihan Media</string>
     <string name="download_complete">Download Complete</string>
     <string name="download_failed">Download Failed</string>
     <string name="downloading">Downloading…</string>
