@@ -5,7 +5,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.webkit.URLUtil
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -15,7 +14,6 @@ import android.webkit.WebViewClient
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import java.io.File
 
 class MainActivity : AppCompatActivity() {
     
@@ -92,107 +90,47 @@ class MainActivity : AppCompatActivity() {
             }
         }
         
-        // Handle downloads by opening Chrome
+        // Handle downloads by opening Chrome directly
         webView.setDownloadListener { url, userAgent, contentDisposition, mimetype, contentLength ->
             Log.d(TAG, "Download requested: $url, mimetype: $mimetype")
             
-            // Check if the file is a PNG
-            if (mimetype == "image/png" || url.endsWith(".png", ignoreCase = true)) {
-                // Extract the original filename from the URL or content disposition
-                val originalFilename = getOriginalFilename(url, contentDisposition)
-                Log.d(TAG, "Original filename: $originalFilename")
-                
-                openInChrome(url, originalFilename)
-            } else {
-                Toast.makeText(this@MainActivity, "Only PNG files can be downloaded", Toast.LENGTH_SHORT).show()
-            }
+            // Open Chrome for any download, not just PNG files
+            openUrlInChrome(url)
         }
         
         // Load the PHP webpage
         webView.loadUrl("https://media.sekol.my.id/login.php")
     }
     
-    private fun getOriginalFilename(url: String, contentDisposition: String?): String {
-        // First try to get filename from content disposition
-        var filename = URLUtil.guessFileName(url, contentDisposition, "image/png")
-        
-        // If that doesn't work well, try to extract from URL
-        if (filename.isNullOrEmpty() || filename == "download.png") {
-            // Extract filename from URL path
-            try {
-                val uri = Uri.parse(url)
-                val path = uri.path
-                if (path != null) {
-                    val lastSlash = path.lastIndexOf('/')
-                    if (lastSlash != -1 && lastSlash < path.length - 1) {
-                        val filenameFromPath = path.substring(lastSlash + 1)
-                        if (filenameFromPath.isNotEmpty()) {
-                            filename = filenameFromPath
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error extracting filename from URL", e)
-            }
-        }
-        
-        // If we still don't have a good filename, try to parse content disposition manually
-        if (filename.isNullOrEmpty() || filename == "download.png") {
-            contentDisposition?.let {
-                val filenamePattern = "filename=\"([^\"]*)\""
-                val regex = Regex(filenamePattern)
-                val matchResult = regex.find(contentDisposition)
-                matchResult?.groupValues?.getOrNull(1)?.let { extractedName ->
-                    if (extractedName.isNotEmpty()) {
-                        filename = extractedName
-                    }
-                }
-            }
-        }
-        
-        // Log the extracted filename
-        Log.d(TAG, "Extracted filename: $filename from URL: $url")
-        
-        return filename
-    }
-    
-    private fun openInChrome(url: String, filename: String) {
+    private fun openUrlInChrome(url: String) {
         try {
-            // Create an intent to open the URL in Chrome
-            val intent = Intent(Intent.ACTION_VIEW)
+            // Create an intent to open the URL directly in Chrome
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
             
-            // Set the data and type
-            intent.setDataAndType(Uri.parse(url), "image/png")
-            
-            // Add extra to suggest the filename
-            intent.putExtra(Intent.EXTRA_TITLE, filename)
-            
-            // Try to set Chrome as the browser to handle this
+            // Force the intent to use Chrome
             intent.setPackage("com.android.chrome")
             
-            // If Chrome is not available, fall back to any browser
-            if (intent.resolveActivity(packageManager) == null) {
-                intent.setPackage(null)
+            // Check if Chrome is available
+            if (intent.resolveActivity(packageManager) != null) {
+                startActivity(intent)
+                Toast.makeText(this, "Opening in Chrome", Toast.LENGTH_SHORT).show()
+            } else {
+                // If Chrome is not available, use any available browser
+                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                startActivity(browserIntent)
+                Toast.makeText(this, "Opening in browser", Toast.LENGTH_SHORT).show()
             }
             
-            // Add flags to suggest download rather than viewing
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            
-            startActivity(intent)
-            Toast.makeText(this, "Opening download in browser: $filename", Toast.LENGTH_SHORT).show()
-            
         } catch (e: Exception) {
-            Log.e(TAG, "Error opening Chrome", e)
+            Log.e(TAG, "Error opening URL in Chrome", e)
             Toast.makeText(this, "Could not open browser: ${e.message}", Toast.LENGTH_LONG).show()
             
-            // Fallback to any browser if there was an error
+            // Try one more time with a generic intent
             try {
                 val fallbackIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                 startActivity(fallbackIntent)
             } catch (e2: Exception) {
-                Log.e(TAG, "Error opening fallback browser", e2)
-                Toast.makeText(this, "Could not open any browser", Toast.LENGTH_LONG).show()
+                Log.e(TAG, "Error with fallback browser intent", e2)
             }
         }
     }
