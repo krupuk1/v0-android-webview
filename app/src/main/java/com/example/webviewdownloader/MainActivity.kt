@@ -14,11 +14,13 @@ import android.webkit.WebViewClient
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
 class MainActivity : AppCompatActivity() {
     
     private lateinit var webView: WebView
     private lateinit var progressBar: ProgressBar
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
     private val TAG = "MainActivity"
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,8 +29,25 @@ class MainActivity : AppCompatActivity() {
         
         webView = findViewById(R.id.webView)
         progressBar = findViewById(R.id.progressBar)
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
         
+        setupSwipeRefresh()
         setupWebView()
+    }
+    
+    private fun setupSwipeRefresh() {
+        // Set up refresh colors
+        swipeRefreshLayout.setColorSchemeResources(
+            android.R.color.holo_blue_bright,
+            android.R.color.holo_green_light,
+            android.R.color.holo_orange_light,
+            android.R.color.holo_red_light
+        )
+        
+        // Set up refresh listener
+        swipeRefreshLayout.setOnRefreshListener {
+            webView.reload()
+        }
     }
     
     private fun setupWebView() {
@@ -65,12 +84,20 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 progressBar.visibility = View.GONE
+                // Stop swipe refresh animation if it's refreshing
+                if (swipeRefreshLayout.isRefreshing) {
+                    swipeRefreshLayout.isRefreshing = false
+                }
                 Log.d(TAG, "Page loaded: $url")
             }
             
             override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
                 super.onReceivedError(view, request, error)
                 progressBar.visibility = View.GONE
+                // Stop swipe refresh animation if it's refreshing
+                if (swipeRefreshLayout.isRefreshing) {
+                    swipeRefreshLayout.isRefreshing = false
+                }
                 Log.e(TAG, "WebView error: ${error?.description}")
             }
         }
@@ -79,12 +106,16 @@ class MainActivity : AppCompatActivity() {
         webView.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
                 super.onProgressChanged(view, newProgress)
-                progressBar.progress = newProgress
-                if (newProgress < 100 && progressBar.visibility == View.GONE) {
-                    progressBar.visibility = View.VISIBLE
-                }
-                if (newProgress == 100) {
+                if (newProgress < 100) {
+                    if (progressBar.visibility == View.GONE) {
+                        progressBar.visibility = View.VISIBLE
+                    }
+                } else {
                     progressBar.visibility = View.GONE
+                    // Stop swipe refresh animation if it's refreshing
+                    if (swipeRefreshLayout.isRefreshing) {
+                        swipeRefreshLayout.isRefreshing = false
+                    }
                 }
                 Log.d(TAG, "Loading progress: $newProgress%")
             }
